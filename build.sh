@@ -882,7 +882,9 @@ COMMIT
 -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -i lo -j ACCEPT
 -A INPUT -i eth0 -p tcp -m tcp --dport 9050 -j ACCEPT
--A INPUT -i eth0 -p udp -m udp --dport 68 -j ACCEPT
+-A INPUT -i eth0 -p tcp -m tcp --dport 9040 -j ACCEPT
+-A INPUT -i eth0 -p udp -m udp --dport 9053 -j ACCEPT
+-A INPUT -i eth0 -p udp -m udp --dport 67 -j ACCEPT
 -A INPUT -p tcp -j REJECT --reject-with tcp-reset
 -A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
 -A INPUT -j REJECT --reject-with icmp-proto-unreachable
