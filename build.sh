@@ -197,12 +197,6 @@ __TORRC__
 
 #
 # set up the ethernet
-cat > /etc/conf.d/network << __ETHCONF__
-interface=eth0
-address=172.16.0.1
-netmask=24
-broadcast=172.16.0.255
-__ETHCONF__
 
 cat > /etc/systemd/system/network.service << __ETHRC__
 [Unit]
@@ -213,14 +207,11 @@ Before=network.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-EnvironmentFile=/etc/conf.d/network
-ExecStart=/sbin/ip link set dev ${interface} up
-#ExecStart=/usr/sbin/wpa_supplicant -B -i ${interface} -c /etc/wpa_supplicant.conf # Remove this for wired connections
-ExecStart=/sbin/ip addr add ${address}/${netmask} broadcast ${broadcast} dev ${interface}
-#ExecStart=/sbin/ip route add default via ${gateway}
+ExecStart=/sbin/ip link set dev eth0 up
+ExecStart=/sbin/ip addr add 172.16.0.1/24 broadcast 172.16.0.255 dev eth0
  
-ExecStop=/sbin/ip addr flush dev ${interface}
-ExecStop=/sbin/ip link set dev ${interface} down
+ExecStop=/sbin/ip addr flush dev eth0
+ExecStop=/sbin/ip link set dev eth0 down
 
 [Install]
 WantedBy=multi-user.target
