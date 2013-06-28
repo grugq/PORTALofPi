@@ -9,7 +9,7 @@
 # Based on the RaspberryPi Arch image from here:
 #  http://www.raspberrypi.org/downloads
 # specifically:
-#  http://downloads.raspberrypi.org/images/archlinuxarm/archlinux-hf-2012-09-18/archlinux-hf-2012-09-18.zip
+#  http://archlinuxarm.org/os/rpi/archlinux-hf-2013-06-15.img.zip
 
 # PORTAL configuration overview
 #  
