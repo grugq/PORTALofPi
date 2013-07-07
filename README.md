@@ -3,7 +3,7 @@ PORTALofPi
 
 PORTAL of Pi - RaspberyPi based PORTAL device. Certified UNIX Network Technicians only!
 
-Developement and Design Guide
+Development and Design Guide
 =============================
 
 By: the grugq <thegrugq@gmail.com>
