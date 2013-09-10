@@ -107,6 +107,29 @@ __ETHRC__
 
 systemctl enable network.service
 
+# should already be enabled
+systemctl enable ntpd.service
+
+# patch ntp-wait: strange unresolved bug
+sed -i 's/$leap =~ \/(sync|leap)_alarm/$sync =~ \/sync_unspec/' /usr/bin/ntp-wait
+sed -i 's/$leap =~ \/leap_(none|((add|del)_sec))/$sync =~ \/sync_ntp/' /usr/bin/ntp-wait
+
+cat > /usr/lib/systemd/system/ntp-wait.service << __NTPWAIT__
+[Unit]
+Description=Wait for Network Time Service to synchronize
+After=ntpd.service
+Requires=ntpd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ntp-wait -n 5
+
+[Install]
+WantedBy=multi-user.target
+__NTPWAIT__
+
+systemctl enable ntp-wait.service
+
 # configure dnsmasq
 cat > /etc/dnsmasq.conf << __DNSMASQ__
 bogus-priv
@@ -157,6 +180,9 @@ COMMIT
 __IPTABLES__
 
 systemctl enable iptables.service
+
+# patch tor service: wait for ntpd to synchronize
+sed -i 's/After=network.target/After= network.target ntp-wait.service/' /usr/lib/systemd/system/tor.service
 
 # turn on tor, and reboot... it should work. 
 systemctl enable tor.service
