@@ -59,9 +59,6 @@ AllowUnverifiedNodes middle,rendezvous
 
 Log notice syslog
 
-RunAsDaemon 1
-User tor
-Group tor
 DataDirectory /var/lib/tor
 
 ## The port on which Tor will listen for local connections from Tor controller
