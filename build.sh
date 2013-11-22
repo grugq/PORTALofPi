@@ -42,6 +42,13 @@ pacman -S tor
 # install an HTTP proxy, optional
 pacman -S polipo
 
+# logrunner & tlsdate both need to be  built :(
+
+## Setup the hardware random number generator
+echo "bcm2708-rng" > /etc/modules-load.d/bcm2708-rng.conf
+pacman -Sy rng-tools
+systemctl enable rngd
+
 # This is the config for Tor, lets set it up:
 cat > /etc/tor/torrc << __TORRC__
 ## CONFIGURED FOR ARCHLINUX
