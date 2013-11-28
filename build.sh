@@ -49,6 +49,10 @@ echo "bcm2708-rng" > /etc/modules-load.d/bcm2708-rng.conf
 pacman -Sy rng-tools
 systemctl enable rngd
 
+# set the time to UTC, because that's how we roll
+rm /etc/localtime
+ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
 # This is the config for Tor, lets set it up:
 cat > /etc/tor/torrc << __TORRC__
 ## CONFIGURED FOR ARCHLINUX
