@@ -53,6 +53,9 @@ systemctl enable rngd
 rm /etc/localtime
 ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
+# set hostname to PORTAL \m/
+echo "portal" > /etc/hostname
+
 # This is the config for Tor, lets set it up:
 cat > /etc/tor/torrc << __TORRC__
 ## CONFIGURED FOR ARCHLINUX
