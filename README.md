@@ -1,13 +1,9 @@
 ```html
-<pre>
   ___  ___  ___ _____ _   _
  | _ \/ _ \| _ \_   _/_\ | | of ._ o  
  |  _/ (_) |   / | |/ _ \| |__  |_)|  
  |_|  \___/|_|_\ |_/_/ \_\____| |
-
-</pre>
 ```
-
 
 PORTAL of Pi - RaspberyPi based PORTAL device. Certified UNIX Network Technicians only!
 
@@ -15,7 +11,6 @@ Development and Design Guide
 =============================
 
 By: the grugq <thegrugq@gmail.com>
-
 
 Guide
 =====
