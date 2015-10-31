@@ -66,9 +66,9 @@ cat > /etc/tor/torrc << __TORRC__
 
 ## Replace this with "SocksPort 0" if you plan to run Tor only as a
 ## server, and not make any local application connections yourself.
-SocksPort 9050 # what port to open for local application connections
-SocksBindAddress 127.0.0.1 # accept connections only from localhost
-SocksBindAddress 172.16.0.1:9050 # listen on a chosen IP/port too
+SocksPort 9050 # port to listen on for localhost connections
+# SocksPort 127.0.0.1:9050 # functionally the same as the line above 
+SocksPort 172.16.0.1:9050 # listen on a chosen IP/port too
 
 ## Allow no-name routers (ones that the dirserver operators don't
 ## know anything about) in only these positions in your circuits.
@@ -86,10 +86,9 @@ DataDirectory /var/lib/tor
 
 VirtualAddrNetwork 10.192.0.0/10             
 AutomapHostsOnResolve 1                                              
-TransPort 9040                                                          
-TransListenAddress 172.16.0.1                                          
-DNSPort 9053                                                              
-DNSListenAddress 172.16.0.1
+TransPort 172.16.0.1:9040                                                          
+DNSPort 172.16.0.1:9053                                                              
+
 __TORRC__
 
 #
