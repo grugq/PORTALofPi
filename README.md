@@ -1,6 +1,6 @@
 ```html
   ___  ___  ___ _____ _   _
- | _ \/ _ \| _ \_   _/_\ | | of ._ o  
+ | _ \/ _ \| _ \_   _/_\ | | of  _ o  
  |  _/ (_) |   / | |/ _ \| |__  |_)|  
  |_|  \___/|_|_\ |_/_/ \_\____| |
 ```
@@ -20,4 +20,4 @@ which transparently forwards all TCP traffic over the Tor network. There is
 also a Tor SOCKS proxy for explicitly interacting with the Tor network, either
 for more security, or to access a Hidden Service.
 
-The configuration of access to the Internet is left as an exercise to the reader.
+Internet access is assumed to use a USB ethernet adapter.
