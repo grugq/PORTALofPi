@@ -7,13 +7,14 @@
 # Licensed GPLv3
 #
 # (c) 2013 the grugq <the.grugq@gmail.com>
+# modified 2k16 by TACIXAT
 
 # See the README.md for indepth details.
 #
 # Based on the RaspberryPi Arch image from here:
 #  http://www.raspberrypi.org/downloads
 # specifically:
-#  http://archlinuxarm.org/os/rpi/archlinux-hf-2013-06-15.img.zip
+#  http://archlinuxarm.org/platforms/armv7/broadcom/raspberry-pi-2
 
 # PORTAL configuration overview
 #  
@@ -21,9 +22,11 @@
 #   eth0: 172.16.0.1
 #        * anything from here can only reach 9050 (Tor proxy) or,
 #        * the transparent Tor proxy 
-#    USB: ???.
-#        * Internet access. You're on your own
-#        * No services exposed here
+#    USB: eth1
+#        * Auto DHCP
+#        * Get a USB ethernet adapter
+#        * http://elinux.org/RPi_USB_Ethernet_adapters
+#        * Buy it in person with cash
 
 # STEP 1 !!! 
 #   configure Internet access, we'll neet to install some basic tools.
@@ -32,10 +35,9 @@
 pacman -Syu
 
 # install a comfortable work environment
-pacman -S yaourt zsh grml-zsh-config vim htop lsof strace
-
-# install development tools, needed only for Tor (? check this ?)
-#pacman -S base-devel
+# yaourt didn't install for me, so fuck it
+#pacman -S yaourt
+pacman -S zsh grml-zsh-config vim htop lsof strace
 
 # install dnsmasq for DHCP on eth0
 pacman -S dnsmasq
@@ -46,10 +48,28 @@ pacman -S tor
 # install an HTTP proxy, optional
 pacman -S polipo
 
-# logrunner & tlsdate both need to be  built :(
+# install development tools, needed only for Tor (? check this ?)
+#pacman -S base-devel
+
+# build tlsdate 
+#TK needs some build tools
+#curl https://aur.archlinux.org/cgit/aur.git/snapshot/tlsdate.tar.gz > tlsdate.tar.gz
+#tar -xvzf tlsdate.tar.gz
+#cd tlsdate
+#makepkg -sri
+#cp tlsdate.service /etc/systemd/system/
+#systemctl enable tlsdate.service
+
+# logrunner alternative
+#echo "tmpfs /var/log tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
+#rm -R /var/log
+
+# configure USB network
+#TK rename this file
+#sed -e 's/eth0/eth1/g' etc/systemd/network/eth0.network
 
 ## Setup the hardware random number generator
-echo "bcm2708-rng" > /etc/modules-load.d/bcm2708-rng.conf
+echo "bcm2708_rng" > /etc/modules-load.d/bcm2708-rng.conf
 pacman -Sy rng-tools
 systemctl enable rngd
 
@@ -203,3 +223,5 @@ sed -i 's/After=network.target/After= network.target ntp-wait.service/' /usr/lib
 
 # turn on tor, and reboot... it should work. 
 systemctl enable tor.service
+
+sync && reboot
