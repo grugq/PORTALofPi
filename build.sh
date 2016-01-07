@@ -9,7 +9,7 @@
 # (c) 2013 the grugq <the.grugq@gmail.com>
 # modified 2k16 by TACIXAT
 
-# See the README.md for indepth details.
+# See the README.md for indepth details. (loljk the README sucks)
 #
 # Based on the RaspberryPi Arch image from here:
 #  http://www.raspberrypi.org/downloads
@@ -27,8 +27,9 @@
 #        * Get a USB ethernet adapter
 #        * http://elinux.org/RPi_USB_Ethernet_adapters
 #        * Buy it in person with cash
+#        * Wear a cap and sunglasses in to the store like a cool hacker
 
-# STEP 1 !!! 
+# STEP 1 !!! (of 1)
 #   configure Internet access, we'll neet to install some basic tools.
 
 # update pacman
@@ -66,7 +67,7 @@ pacman -S polipo
 
 # configure USB network
 #TK rename this file
-#sed -e 's/eth0/eth1/g' etc/systemd/network/eth0.network
+#sed -ie 's/eth0/eth1/g' etc/systemd/network/eth0.network
 
 ## Setup the hardware random number generator
 echo "bcm2708_rng" > /etc/modules-load.d/bcm2708-rng.conf
