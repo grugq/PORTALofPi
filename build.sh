@@ -1,6 +1,6 @@
 #!/bin/bash
 #  ___  ___  ___ _____ _   _
-# | _ \/ _ \| _ \_   _/_\ | | of ._ o  
+# | _ \/ _ \| _ \_   _/_\ | | of  _ o  
 # |  _/ (_) |   / | |/ _ \| |__  |_)|  
 # |_|  \___/|_|_\ |_/_/ \_\____| |
 #
@@ -15,6 +15,8 @@
 #  http://www.raspberrypi.org/downloads
 # specifically:
 #  http://archlinuxarm.org/platforms/armv7/broadcom/raspberry-pi-2
+
+# THIS SETUP IS UNTESTED - USE AT YOUR OWN RISK
 
 # PORTAL configuration overview
 #  
@@ -32,13 +34,31 @@
 # STEP 1 !!! (of 1)
 #   configure Internet access, we'll neet to install some basic tools.
 
+echo "Change alarm's password!"
+echo "Password requirements, at least 10000 characters, 40% of which need to be emoji."
+# change alarm's password
+passwd
+
+# once you go root
+su
+
+echo "Change root's password!"
+# change root's password
+passwd
+
 # update pacman
 pacman -Syu
 
 # install a comfortable work environment
 # yaourt didn't install for me, so fuck it
 #pacman -S yaourt
-pacman -S zsh grml-zsh-config vim htop lsof strace
+#pacman -S zsh grml-zsh-config htop lsof strace
+pacman -S vim
+
+# optional if you're going to be doing work
+# set up sudo because pkgbuild can't be run as root
+pacman -S sudo
+#echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
 
 # install dnsmasq for DHCP on eth0
 pacman -S dnsmasq
@@ -46,40 +66,58 @@ pacman -S dnsmasq
 # Install Tor
 pacman -S tor
 
-# install an HTTP proxy, optional
-pacman -S polipo
+# Install NTP
+pacman -S ntp
 
-# install development tools, needed only for Tor (? check this ?)
+# install an HTTP proxy, optional
+# isn't caching your web traffic a shitty idea?
+#pacman -S polipo
+
+# install development tools for building tlsdate
 #pacman -S base-devel
+#TK I think gettext is already installed
+pacman -S binutils autoconf automake libtool pkg-config gcc make fakeroot
+
+# set hostname to PORTAL \m/
+#TK randomize this?
+echo "portal" > /etc/hostname
+
+#TK memory wiper
+#some application that goes through free(d?) memory and wrecks it
+#mimic forensic tools but make it lite
+
+#TK can we alias rm to shred? 
+#what are the implications on an SD card?
+
+#TK mangle modification dates to fuck with forensics?
+
+#TK check IP tables against https://lists.torproject.org/pipermail/tor-talk/2012-October/026226.html
+
+#TK disk encryption, how will this affect speed?
 
 # build tlsdate 
-#TK needs some build tools
-#curl https://aur.archlinux.org/cgit/aur.git/snapshot/tlsdate.tar.gz > tlsdate.tar.gz
-#tar -xvzf tlsdate.tar.gz
-#cd tlsdate
-#makepkg -sri
-#cp tlsdate.service /etc/systemd/system/
-#systemctl enable tlsdate.service
+curl https://aur.archlinux.org/cgit/aur.git/snapshot/tlsdate.tar.gz > tlsdate.tar.gz
+tar -xvzf tlsdate.tar.gz
+chown alarm:alarm tlsdate -R
+cd tlsdate
+sudo -u alarm makepkg -sri
+cp tlsdate.service /etc/systemd/system/
+systemctl enable tlsdate.service
+cd ..
 
-# logrunner alternative
-#echo "tmpfs /var/log tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
-#rm -R /var/log
+# set up eth1 for usb to internet connection
+sed -i 's/eth0/eth1/g' /etc/systemd/network/eth0.network
+mv /etc/systemd/network/eth0.network /etc/systemd/network/eth1.network
 
-# configure USB network
-#TK rename this file
-#sed -ie 's/eth0/eth1/g' etc/systemd/network/eth0.network
-
-## Setup the hardware random number generator
+# Setup the hardware random number generator
+# I keep mistyping bmc, I blame bmc
 echo "bcm2708_rng" > /etc/modules-load.d/bcm2708-rng.conf
 pacman -Sy rng-tools
 systemctl enable rngd
 
-# set the time to UTC, because that's how we roll
+#set the time to UTC, because that's how we roll
 rm /etc/localtime
 ln -s /usr/share/zoneinfo/UTC /etc/localtime
-
-# set hostname to PORTAL \m/
-echo "portal" > /etc/hostname
 
 # This is the config for Tor, lets set it up:
 cat > /etc/tor/torrc << __TORRC__
@@ -112,13 +150,13 @@ DNSPort 172.16.0.1:9053
 
 __TORRC__
 
-#
-# set up the ethernet
+# take over eth0 for computer to pi connection
 cat > /etc/conf.d/network << __ETHCONF__
 interface=eth0
 address=172.16.0.1
 netmask=24
 broadcast=172.16.0.255
+iface2=eth1
 __ETHCONF__
 
 cat > /etc/systemd/system/network.service << __ETHRC__
@@ -131,6 +169,11 @@ Before=network.target
 Type=oneshot
 RemainAfterExit=yes
 EnvironmentFile=/etc/conf.d/network
+ExecStart=/sbin/ip link set dev \${iface2} down
+ExecStart=/sbin/macchanger -r \${iface2}
+ExecStart=/sbin/ip link set dev \${iface2} up
+ExecStart=/sbin/ip link set dev \${interface} down
+ExecStart=/sbin/macchanger -r \${interface}
 ExecStart=/sbin/ip link set dev \${interface} up
 #ExecStart=/usr/sbin/wpa_supplicant -B -i \${interface} -c /etc/wpa_supplicant.conf # Remove this for wired connections
 ExecStart=/sbin/ip addr add \${address}/\${netmask} broadcast \${broadcast} dev \${interface}
@@ -145,9 +188,33 @@ __ETHRC__
 
 systemctl enable network.service
 
-# should already be enabled
+# randomize your mac addr
+cat > /etc/systemd/system/macchanger.service << __MACRC__
+[Unit]
+Description=Randomize MAC Addrs
+After=network.service
+Requires=network.servce
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/conf.d/network
+ExecStart=/sbin/ip link set dev \${interface} down
+ExecStart=/sbin/macchanger -r \${interface}
+ExecStart=/sbin/ip link set dev \${interface} up
+ExecStart=/sbin/ip link set dev \${iface2} down
+ExecStart=/sbin/macchanger -r \${iface2}
+ExecStart=/sbin/ip link set dev \${iface2} up
+
+[Install]
+WantedBy=multi-user.target
+__MACRC__
+
+systemctl enable macchanger.service
+
 systemctl enable ntpd.service
 
+#TK read code to see what this is doing
 # patch ntp-wait: strange unresolved bug
 sed -i 's/$leap =~ \/(sync|leap)_alarm/$sync =~ \/sync_unspec/' /usr/bin/ntp-wait
 sed -i 's/$leap =~ \/leap_(none|((add|del)_sec))/$sync =~ \/sync_ntp/' /usr/bin/ntp-wait
@@ -224,5 +291,14 @@ sed -i 's/After=network.target/After= network.target ntp-wait.service/' /usr/lib
 
 # turn on tor, and reboot... it should work. 
 systemctl enable tor.service
+
+# ramfs grows dynamically
+# tmpfs has limited size but can use swap
+# pick your poison
+echo "tmpfs /var/log tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
+rm -R /var/log
+
+echo "tmpfs /tmp tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
+rm -R /tmp
 
 sync && reboot
