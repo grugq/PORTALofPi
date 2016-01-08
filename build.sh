@@ -16,11 +16,11 @@
 # specifically:
 #  http://archlinuxarm.org/platforms/armv7/broadcom/raspberry-pi-2
 
-# THIS SETUP IS UNTESTED - USE AT YOUR OWN RISK
+# THIS SETUP HAS NOT BEEN PUBLICLY AUDITED - USE AT YOUR OWN RISK
 
 # PORTAL configuration overview
 #  
-# ((Internet))---[USB]<[Pi]>[eth0]----((LAN))
+# ((Internet))---[eth1 USB]<[Pi]>[eth0]----((LAN))
 #   eth0: 172.16.0.1
 #        * anything from here can only reach 9050 (Tor proxy) or,
 #        * the transparent Tor proxy 
@@ -34,13 +34,16 @@
 # STEP 1 !!! (of 1)
 #   configure Internet access, we'll neet to install some basic tools.
 
-echo "Change alarm's password!"
-echo "Password requirements, at least 10000 characters, 40% of which need to be emoji."
-# change alarm's password
-passwd
 
+# Do this manually
+# alarm's password is alarm
+# root's password is root
+#echo "Change alarm's password!"
+#echo "Password requirements, at least 10000 characters, 40% of which must be emoji."
+# change alarm's password
+#passwd
 # once you go root
-su
+#su
 
 echo "Change root's password!"
 # change root's password
@@ -58,7 +61,8 @@ pacman -S vim
 # optional if you're going to be doing work
 # set up sudo because pkgbuild can't be run as root
 pacman -S sudo
-#echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
+# optional give alarm sudo
+echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
 
 # install dnsmasq for DHCP on eth0
 pacman -S dnsmasq
@@ -69,14 +73,15 @@ pacman -S tor
 # Install NTP
 pacman -S ntp
 
+pacman -S macchanger
+
 # install an HTTP proxy, optional
 # isn't caching your web traffic a shitty idea?
 #pacman -S polipo
 
 # install development tools for building tlsdate
 #pacman -S base-devel
-#TK I think gettext is already installed
-pacman -S binutils autoconf automake libtool pkg-config gcc make fakeroot
+pacman -S binutils autoconf automake libtool pkg-config gcc make fakeroot gettext
 
 # set hostname to PORTAL \m/
 #TK randomize this?
@@ -169,11 +174,6 @@ Before=network.target
 Type=oneshot
 RemainAfterExit=yes
 EnvironmentFile=/etc/conf.d/network
-ExecStart=/sbin/ip link set dev \${iface2} down
-ExecStart=/sbin/macchanger -r \${iface2}
-ExecStart=/sbin/ip link set dev \${iface2} up
-ExecStart=/sbin/ip link set dev \${interface} down
-ExecStart=/sbin/macchanger -r \${interface}
 ExecStart=/sbin/ip link set dev \${interface} up
 #ExecStart=/usr/sbin/wpa_supplicant -B -i \${interface} -c /etc/wpa_supplicant.conf # Remove this for wired connections
 ExecStart=/sbin/ip addr add \${address}/\${netmask} broadcast \${broadcast} dev \${interface}
@@ -189,9 +189,10 @@ __ETHRC__
 systemctl enable network.service
 
 # randomize your mac addr
+# this doesn't seem to work if you do iface2 before interface ???
 cat > /etc/systemd/system/macchanger.service << __MACRC__
 [Unit]
-Description=Randomize MAC Addrs
+Description=Randomize MAC Addies
 After=network.service
 Requires=network.servce
 
@@ -300,5 +301,8 @@ rm -R /var/log
 
 echo "tmpfs /tmp tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
 rm -R /tmp
+
+#shread ~/.bash_history
+#shread /home/alarm/.bash_history
 
 sync && reboot
