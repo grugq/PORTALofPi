@@ -157,15 +157,22 @@ systemctl enable ntp-wait.service
 
 # configure dnsmasq
 cat > /etc/dnsmasq.conf << __DNSMASQ__
+# Don't forward queries for private networks (i.e. 172.16.0.0/16) to upstream nameservers.
 bogus-priv
+# Don't forward queries for plain names (no dots or domain parts), to upstream nameservers.
+domain-needed
+# Ignore periodic Windows DNS requests which don't get sensible answers from the public DNS.
 filterwin2k
+
+# Listen for DNS queries arriving on this interface.
 interface=eth0
+# Bind to port 53 only on the interfaces listed above.
 bind-interfaces
 
-dhcp-range=172.16.0.50,172.16.0.150,12h
+# Serve DHCP replies in the following IP range
+dhcp-range=interface:eth0,172.16.0.50,172.16.0.150,255.255.255.0,12h
 
-# For debugging purposes, log each DNS query as it passes through
-# dnsmasq.
+# For debugging purposes, log each DNS query as it passes through dnsmasq.
 # XXX this is actually a good idea, particularly if you want to look for indicators of compromise.
 #log-queries
 __DNSMASQ__
