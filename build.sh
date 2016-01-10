@@ -51,6 +51,8 @@ pacman -S polipo
 ## Setup the hardware random number generator
 echo "bcm2708-rng" > /etc/modules-load.d/bcm2708-rng.conf
 pacman -Sy rng-tools
+# Tell rngd to seed /dev/random using the hardware rng
+echo 'RNGD_OPTS="-o /dev/random -r /dev/hwrng"' > /etc/conf.d/rngd
 systemctl enable rngd
 
 # set the time to UTC, because that's how we roll
