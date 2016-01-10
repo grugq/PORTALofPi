@@ -86,10 +86,16 @@ DataDirectory /var/lib/tor
 ## currently experimental.
 #ControlPort 9051
 
-VirtualAddrNetwork 10.192.0.0/10             
-AutomapHostsOnResolve 1                                              
-TransPort 172.16.0.1:9040                                                          
-DNSPort 172.16.0.1:9053                                                              
+## Map requests for .onion/.exit addresses to virtual addresses so
+## applications can resolve and connect to them transparently.
+AutomapHostsOnResolve 1 
+## Subnet to automap .onion/.exit address to.
+VirtualAddrNetworkIPv4 10.192.0.0/10
+
+## Open this port to listen for transparent proxy connections.
+TransPort 172.16.0.1:9040
+## Open this port to listen for UDP DNS requests, and resolve them anonymously.
+DNSPort 172.16.0.1:9053                                                               
 
 __TORRC__
 
