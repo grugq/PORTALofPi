@@ -45,9 +45,14 @@
 # once you go root
 #su
 
-echo "Change root's password!"
+#echo "Change root's password!"
 # change root's password
-passwd
+#passwd
+
+if [[ $EUID -ne 0 ]]; then
+    echo "Needs more root..." 
+    exit
+fi
 
 # update pacman
 pacman -Syu
@@ -63,6 +68,7 @@ pacman -S vim
 pacman -S sudo
 # optional give alarm sudo
 echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
+echo "root ALL=(ALL) ALL" >> /etc/sudoers
 
 # install dnsmasq for DHCP on eth0
 pacman -S dnsmasq
@@ -111,6 +117,7 @@ systemctl enable tlsdate.service
 cd ..
 
 # set up eth1 for usb to internet connection
+#TK eth1 isn't starting on boot, works if you replug
 sed -i 's/eth0/eth1/g' /etc/systemd/network/eth0.network
 mv /etc/systemd/network/eth0.network /etc/systemd/network/eth1.network
 
@@ -189,12 +196,12 @@ __ETHRC__
 systemctl enable network.service
 
 # randomize your mac addr
-# this doesn't seem to work if you do iface2 before interface ???
+#TK can't get an IP on eth1 if this runs
 cat > /etc/systemd/system/macchanger.service << __MACRC__
 [Unit]
 Description=Randomize MAC Addies
 After=network.service
-Requires=network.servce
+Requires=network.service
 
 [Service]
 Type=oneshot
@@ -211,7 +218,8 @@ ExecStart=/sbin/ip link set dev \${iface2} up
 WantedBy=multi-user.target
 __MACRC__
 
-systemctl enable macchanger.service
+# disabled for now
+#systemctl enable macchanger.service
 
 systemctl enable ntpd.service
 
