@@ -49,9 +49,20 @@
 # change root's password
 #passwd
 
+nc -z 8.8.8.8 53  >/dev/null 2>&1
+online=$?
+if [ $online -eq 0 ]; then
+    echo "Online!"
+else
+    echo "Get internet..."
+    exit
+fi
+
 if [[ $EUID -ne 0 ]]; then
     echo "Needs more root..." 
     exit
+else
+    echo "Root!"
 fi
 
 # update pacman
