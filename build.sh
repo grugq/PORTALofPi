@@ -34,21 +34,6 @@
 # STEP 1 !!! (of 1)
 #   configure Internet access, we'll neet to install some basic tools.
 
-
-# Do this manually
-# alarm's password is alarm
-# root's password is root
-#echo "Change alarm's password!"
-#echo "Password requirements, at least 10000 characters, 40% of which must be emoji."
-# change alarm's password
-#passwd
-# once you go root
-#su
-
-#echo "Change root's password!"
-# change root's password
-#passwd
-
 nc -z 8.8.8.8 53  >/dev/null 2>&1
 online=$?
 if [ $online -eq 0 ]; then
@@ -65,7 +50,7 @@ else
     echo "Root!"
 fi
 
-# update pacman
+# update
 pacman -Syu
 
 # install a comfortable work environment
@@ -74,11 +59,9 @@ pacman -Syu
 #pacman -S zsh grml-zsh-config htop lsof strace
 pacman -S vim
 
-# optional if you're going to be doing work
-# set up sudo because pkgbuild can't be run as root
 pacman -S sudo
-# optional give alarm sudo
 echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
+# for sudo -u alarm later on
 echo "root ALL=(ALL) ALL" >> /etc/sudoers
 
 # install dnsmasq for DHCP on eth0
@@ -91,10 +74,6 @@ pacman -S tor
 pacman -S ntp
 
 pacman -S macchanger
-
-# install an HTTP proxy, optional
-# isn't caching your web traffic a shitty idea?
-#pacman -S polipo
 
 # install development tools for building tlsdate
 #pacman -S base-devel
@@ -128,7 +107,6 @@ systemctl enable tlsdate.service
 cd ..
 
 # set up eth1 for usb to internet connection
-#TK eth1 isn't starting on boot, works if you replug
 sed -i 's/eth0/eth1/g' /etc/systemd/network/eth0.network
 mv /etc/systemd/network/eth0.network /etc/systemd/network/eth1.network
 
