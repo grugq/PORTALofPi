@@ -34,7 +34,7 @@
 # STEP 1 !!! (of 1)
 #   configure Internet access, we'll neet to install some basic tools.
 
-nc -z 8.8.8.8 53  >/dev/null 2>&1
+ping -c1 8.8.8.8 > /dev/null 2>&1
 online=$?
 if [ $online -eq 0 ]; then
     echo "Online!"
