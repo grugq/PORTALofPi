@@ -10,10 +10,11 @@
 
 # See the README.md for indepth details.
 #
-# Based on the RaspberryPi Arch image from here:
-#  http://www.raspberrypi.org/downloads
-# specifically:
-#  http://archlinuxarm.org/os/rpi/archlinux-hf-2013-06-15.img.zip
+# Based on the RaspberryPi Arch distribution.
+# View official installation instructions:
+#      https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
+# Or run the automated setup script:
+#      bash flash-sdcard.sh /dev/yoursdcard
 
 # PORTAL configuration overview
 #  
