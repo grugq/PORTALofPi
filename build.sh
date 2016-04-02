@@ -96,8 +96,22 @@ VirtualAddrNetworkIPv4 10.192.0.0/10
 ## Open this port to listen for transparent proxy connections.
 TransPort 172.16.0.1:9040
 ## Open this port to listen for UDP DNS requests, and resolve them anonymously.
-DNSPort 172.16.0.1:9053                                                               
+DNSPort 172.16.0.1:9053
 
+## Optional: only use domestic entry nodes.
+## Setting this option might exempt your packets from being classified 
+## as foreign under your nation's spy agency's rules. It may also increase
+## the uniqueness of your traffic profile, depending on where you are.
+## Consult your threat model before enabling.
+##
+## List of 2 letter country codes: 
+##     https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Current_codes
+#EntryNodes {us}
+
+## If you use StrictNodes, then tor will fail to build circuits if
+## an entry node is not available for the country specified.
+## Otherwise, it will use some other node as a last resort.
+#StrictNodes 1
 __TORRC__
 
 #
