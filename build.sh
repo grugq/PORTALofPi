@@ -73,6 +73,15 @@ SocksPort 9050 # port to listen on for localhost connections
 # SocksPort 127.0.0.1:9050 # functionally the same as the line above 
 SocksPort 172.16.0.1:9050 # listen on a chosen IP/port too
 
+## SocksPort connections policy
+## Specify which subnets/ips can access {Socks|Trans|DNS}Ports.
+## Tor will complain about this not being set if Ports are 
+## opened on anything other than localhost, as any machine on
+## the same network would be able to access those ports.
+SocksPolicy accept 127.0.0.0/8.  # Accept localhost
+SocksPolicy accept 172.16.0.0/24 # Accept from workstation
+SocksPolicy reject *             # Reject anything else
+
 ## Allow no-name routers (ones that the dirserver operators don't
 ## know anything about) in only these positions in your circuits.
 ## Other choices (not advised) are entry,exit,introduction.
