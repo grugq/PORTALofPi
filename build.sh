@@ -78,7 +78,7 @@ SocksPort 172.16.0.1:9050 # listen on a chosen IP/port too
 ## Tor will complain about this not being set if Ports are 
 ## opened on anything other than localhost, as any machine on
 ## the same network would be able to access those ports.
-SocksPolicy accept 127.0.0.0/8.  # Accept localhost
+SocksPolicy accept 127.0.0.0/8  # Accept localhost
 SocksPolicy accept 172.16.0.0/24 # Accept from workstation
 SocksPolicy reject *             # Reject anything else
 
