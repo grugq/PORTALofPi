@@ -1,0 +1,25 @@
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# the internal (wired) network interface
+allow-hotplug eth0
+iface eth0 inet static
+ address 192.168.2.1
+ network 192.168.2.0
+ netmask 255.255.255.0
+ broadcast 192.168.2.255
+ gateway 192.168.2.1
+ 
+
+# the external (wifi) interface
+allow-hotplug wlan0
+iface wlan0 inet static
+  address 192.168.1.98
+  netmask 255.255.255.0
+  broadcast 192.168.1.255
+  gateway 192.168.1.1
+  wpa-ssid "YOUR SSID"
+  wpa-psk "YOUR PSK"
+
+pre-up iptables-restore < /etc/network/iptables
