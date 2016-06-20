@@ -29,14 +29,37 @@
 # STEP 1 !!! 
 #   configure Internet access, we'll neet to install some basic tools.
 
+# Check net before we try and fail
+ping -c1 8.8.8.8 > /dev/null 2>&1
+online=$?
+if [ $online -eq 0 ]; then
+    echo "Online!"
+else
+    echo "Get internet..."
+    exit
+fi
+
+# Check root before we try and fail
+if [[ $EUID -ne 0 ]]; then
+    echo "Needs more root..." 
+    exit
+else
+    echo "Root!"
+fi
+
 # update pacman
 pacman -Syu
 
 # install a comfortable work environment
-pacman -S yaourt zsh grml-zsh-config vim htop lsof strace
+pacman -S zsh grml-zsh-config vim htop lsof strace
+# yaourt didn't install in base repos
+#pacman -S yaourt
 
 # install development tools, needed only for Tor (? check this ?)
 #pacman -S base-devel
+
+# minimal set needed for building tlsdate
+pacman -S binutils autoconf automake libtool pkg-config gcc make fakeroot gettext
 
 # install dnsmasq for DHCP on eth0
 pacman -S dnsmasq
@@ -45,15 +68,37 @@ pacman -S dnsmasq
 pacman -S tor
 
 # install an HTTP proxy, optional
-pacman -S polipo
+# Uncomment if you are insane and want to cache your traffic
+#pacman -S polipo
+
+# Install macchanger
+pacman -S macchanger
+
+# Install ntp
+pacman -S ntp
+
+# Install sudo
+pacman -S sudo
+echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
+# for sudo -u alarm later on
+echo "root ALL=(ALL) ALL" >> /etc/sudoers
 
 # logrunner & tlsdate both need to be  built :(
 
+# build tlsdate 
+curl https://aur.archlinux.org/cgit/aur.git/snapshot/tlsdate.tar.gz > tlsdate.tar.gz
+tar -xvzf tlsdate.tar.gz
+chown alarm:alarm tlsdate -R
+#useradd -r -s /usr/bin/nologin tlsdate
+cd tlsdate
+sudo -u alarm makepkg -sri
+cp tlsdate.service /etc/systemd/system/
+systemctl enable tlsdate.service
+cd ..
+
 ## Setup the hardware random number generator
-echo "bcm2708-rng" > /etc/modules-load.d/bcm2708-rng.conf
+echo "bcm2708_rng" > /etc/modules-load.d/bcm2708-rng.conf
 pacman -Sy rng-tools
-# Tell rngd to seed /dev/random using the hardware rng
-echo 'RNGD_OPTS="-o /dev/random -r /dev/hwrng"' > /etc/conf.d/rngd
 systemctl enable rngd
 
 # set the time to UTC, because that's how we roll
@@ -219,3 +264,31 @@ sed -i 's/After=network.target/After= network.target ntp-wait.service/' /usr/lib
 
 # turn on tor, and reboot... it should work. 
 systemctl enable tor.service
+
+# ramfs grows dynamically
+# tmpfs has limited size but can use swap
+# pick your poison
+echo "tmpfs /var/log tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
+rm -R /var/log
+
+echo "tmpfs /tmp tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
+rm -R /tmp
+
+# USB Ethernet Adapter Support
+#sed -i 's/eth0/eth1/g' /etc/systemd/network/eth0.network
+#mv /etc/systemd/network/eth0.network /etc/systemd/network/eth1.network
+
+# Wifi Dongle Support
+# This may allow someone to leak your IP if they compromise your computer
+  
+# Enable SSH from the computer to the Pi
+#sudo systemctl enable sshd
+#sudo systemctl start sshd
+#sudo iptables -t filter -I INPUT -i eth0 -p tcp --dport 22 –j ACCEPT
+#sudo iptables -t nat -I PREROUTING -i eth0 -p tcp --dport 22 -j ACCEPT
+#sudo iptables-save | sudo tee /etc/iptables/iptables.rules
+   
+# To connect to a network use:
+    # sudo wifi-menu
+
+sync && reboot
