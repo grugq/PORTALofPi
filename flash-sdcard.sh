@@ -98,7 +98,29 @@ sync
 mv root/boot/* boot   # Move /boot files to boot partition
 sync
 
+## Add build script to homedir
+cp build.sh root/home/alarm/
+
+## Change alarm's password from default
+SALT=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+echo -n "Update alarm's password: "
+read -s PASS
+echo
+HASH=$(mkpasswd  -m sha-512 -S $SALT -s <<< $PASS)
+sed -i "s~alarm:[^:]\+:~alarm:$HASH:~" root/etc/shadow
+
+## Change root's password from default
+SALT=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+echo -n "Update root's password: "
+read -s PASS
+echo
+HASH=$(mkpasswd  -m sha-512 -S $SALT -s <<< $PASS)
+sed -i "s~root:[^:]\+:~root:$HASH:~" root/etc/shadow
+
 ## Unmount mounts
+sync
 umount boot root
+# rm -r boot root
+# rm ArchLinuxARM-rpi-2-latest.tar.gz
 
 ## We're done.
