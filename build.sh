@@ -1,68 +1,42 @@
 #!/bin/bash
 #  ___  ___  ___ _____ _   _
-# | _ \/ _ \| _ \_   _/_\ | | of  _ o  
+# | _ \/ _ \| _ \_   _/_\ | | of ._ o  
 # |  _/ (_) |   / | |/ _ \| |__  |_)|  
 # |_|  \___/|_|_\ |_/_/ \_\____| |
 #
 # Licensed GPLv3
 #
 # (c) 2013 the grugq <the.grugq@gmail.com>
-# modified 2k16 by TACIXAT
 
-# See the README.md for indepth details. (loljk the README sucks)
+# See the README.md for indepth details.
 #
-# Based on the RaspberryPi Arch image from here:
-#  http://www.raspberrypi.org/downloads
-# specifically:
-#  http://archlinuxarm.org/platforms/armv7/broadcom/raspberry-pi-2
-
-# THIS SETUP HAS NOT BEEN PUBLICLY AUDITED - USE AT YOUR OWN RISK
+# Based on the RaspberryPi Arch distribution.
+# View official installation instructions:
+#      https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
+# Or run the automated setup script:
+#      bash flash-sdcard.sh /dev/yoursdcard
 
 # PORTAL configuration overview
 #  
-# ((Internet))---[eth1 USB]<[Pi]>[eth0]----((LAN))
+# ((Internet))---[USB]<[Pi]>[eth0]----((LAN))
 #   eth0: 172.16.0.1
 #        * anything from here can only reach 9050 (Tor proxy) or,
 #        * the transparent Tor proxy 
-#    USB: eth1
-#        * Auto DHCP
-#        * Get a USB ethernet adapter
-#        * http://elinux.org/RPi_USB_Ethernet_adapters
-#        * Buy it in person with cash
-#        * Wear a cap and sunglasses in to the store like a cool hacker
+#    USB: ???.
+#        * Internet access. You're on your own
+#        * No services exposed here
 
-# STEP 1 !!! (of 1)
+# STEP 1 !!! 
 #   configure Internet access, we'll neet to install some basic tools.
 
-ping -c1 8.8.8.8 > /dev/null 2>&1
-online=$?
-if [ $online -eq 0 ]; then
-    echo "Online!"
-else
-    echo "Get internet..."
-    exit
-fi
-
-if [[ $EUID -ne 0 ]]; then
-    echo "Needs more root..." 
-    exit
-else
-    echo "Root!"
-fi
-
-# update
+# update pacman
 pacman -Syu
 
 # install a comfortable work environment
-# yaourt didn't install for me, so fuck it
-#pacman -S yaourt
-#pacman -S zsh grml-zsh-config htop lsof strace
-pacman -S vim
+pacman -S yaourt zsh grml-zsh-config vim htop lsof strace
 
-pacman -S sudo
-echo "alarm ALL=(ALL) ALL" >> /etc/sudoers
-# for sudo -u alarm later on
-echo "root ALL=(ALL) ALL" >> /etc/sudoers
+# install development tools, needed only for Tor (? check this ?)
+#pacman -S base-devel
 
 # install dnsmasq for DHCP on eth0
 pacman -S dnsmasq
@@ -70,55 +44,24 @@ pacman -S dnsmasq
 # Install Tor
 pacman -S tor
 
-# Install NTP
-pacman -S ntp
+# install an HTTP proxy, optional
+pacman -S polipo
 
-pacman -S macchanger
+# logrunner & tlsdate both need to be  built :(
 
-# install development tools for building tlsdate
-#pacman -S base-devel
-pacman -S binutils autoconf automake libtool pkg-config gcc make fakeroot gettext
-
-# set hostname to PORTAL \m/
-#TK randomize this?
-echo "portal" > /etc/hostname
-
-#TK memory wiper
-#some application that goes through free(d?) memory and wrecks it
-#mimic forensic tools but make it lite
-
-#TK can we alias rm to shred? 
-#what are the implications on an SD card?
-
-#TK mangle modification dates to fuck with forensics?
-
-#TK check IP tables against https://lists.torproject.org/pipermail/tor-talk/2012-October/026226.html
-
-#TK disk encryption, how will this affect speed?
-
-# build tlsdate 
-curl https://aur.archlinux.org/cgit/aur.git/snapshot/tlsdate.tar.gz > tlsdate.tar.gz
-tar -xvzf tlsdate.tar.gz
-chown alarm:alarm tlsdate -R
-cd tlsdate
-sudo -u alarm makepkg -sri
-cp tlsdate.service /etc/systemd/system/
-systemctl enable tlsdate.service
-cd ..
-
-# set up eth1 for usb to internet connection
-sed -i 's/eth0/eth1/g' /etc/systemd/network/eth0.network
-mv /etc/systemd/network/eth0.network /etc/systemd/network/eth1.network
-
-# Setup the hardware random number generator
-# I keep mistyping bmc, I blame bmc
-echo "bcm2708_rng" > /etc/modules-load.d/bcm2708-rng.conf
+## Setup the hardware random number generator
+echo "bcm2708-rng" > /etc/modules-load.d/bcm2708-rng.conf
 pacman -Sy rng-tools
+# Tell rngd to seed /dev/random using the hardware rng
+echo 'RNGD_OPTS="-o /dev/random -r /dev/hwrng"' > /etc/conf.d/rngd
 systemctl enable rngd
 
-#set the time to UTC, because that's how we roll
+# set the time to UTC, because that's how we roll
 rm /etc/localtime
 ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
+# set hostname to PORTAL \m/
+echo "portal" > /etc/hostname
 
 # This is the config for Tor, lets set it up:
 cat > /etc/tor/torrc << __TORRC__
@@ -144,20 +87,26 @@ DataDirectory /var/lib/tor
 ## currently experimental.
 #ControlPort 9051
 
-VirtualAddrNetwork 10.192.0.0/10             
-AutomapHostsOnResolve 1                                              
-TransPort 172.16.0.1:9040                                                          
-DNSPort 172.16.0.1:9053                                                              
+## Map requests for .onion/.exit addresses to virtual addresses so
+## applications can resolve and connect to them transparently.
+AutomapHostsOnResolve 1 
+## Subnet to automap .onion/.exit address to.
+VirtualAddrNetworkIPv4 10.192.0.0/10
+
+## Open this port to listen for transparent proxy connections.
+TransPort 172.16.0.1:9040
+## Open this port to listen for UDP DNS requests, and resolve them anonymously.
+DNSPort 172.16.0.1:9053                                                               
 
 __TORRC__
 
-# take over eth0 for computer to pi connection
+#
+# set up the ethernet
 cat > /etc/conf.d/network << __ETHCONF__
 interface=eth0
 address=172.16.0.1
 netmask=24
 broadcast=172.16.0.255
-iface2=eth1
 __ETHCONF__
 
 cat > /etc/systemd/system/network.service << __ETHRC__
@@ -184,35 +133,9 @@ __ETHRC__
 
 systemctl enable network.service
 
-# randomize your mac addr
-#TK can't get an IP on eth1 if this runs
-cat > /etc/systemd/system/macchanger.service << __MACRC__
-[Unit]
-Description=Randomize MAC Addies
-After=network.service
-Requires=network.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-EnvironmentFile=/etc/conf.d/network
-ExecStart=/sbin/ip link set dev \${interface} down
-ExecStart=/sbin/macchanger -r \${interface}
-ExecStart=/sbin/ip link set dev \${interface} up
-ExecStart=/sbin/ip link set dev \${iface2} down
-ExecStart=/sbin/macchanger -r \${iface2}
-ExecStart=/sbin/ip link set dev \${iface2} up
-
-[Install]
-WantedBy=multi-user.target
-__MACRC__
-
-# disabled for now
-#systemctl enable macchanger.service
-
+# should already be enabled
 systemctl enable ntpd.service
 
-#TK read code to see what this is doing
 # patch ntp-wait: strange unresolved bug
 sed -i 's/$leap =~ \/(sync|leap)_alarm/$sync =~ \/sync_unspec/' /usr/bin/ntp-wait
 sed -i 's/$leap =~ \/leap_(none|((add|del)_sec))/$sync =~ \/sync_ntp/' /usr/bin/ntp-wait
@@ -235,15 +158,22 @@ systemctl enable ntp-wait.service
 
 # configure dnsmasq
 cat > /etc/dnsmasq.conf << __DNSMASQ__
+# Don't forward queries for private networks (i.e. 172.16.0.0/16) to upstream nameservers.
 bogus-priv
+# Don't forward queries for plain names (no dots or domain parts), to upstream nameservers.
+domain-needed
+# Ignore periodic Windows DNS requests which don't get sensible answers from the public DNS.
 filterwin2k
+
+# Listen for DNS queries arriving on this interface.
 interface=eth0
+# Bind to port 53 only on the interfaces listed above.
 bind-interfaces
 
-dhcp-range=172.16.0.50,172.16.0.150,12h
+# Serve DHCP replies in the following IP range
+dhcp-range=interface:eth0,172.16.0.50,172.16.0.150,255.255.255.0,12h
 
-# For debugging purposes, log each DNS query as it passes through
-# dnsmasq.
+# For debugging purposes, log each DNS query as it passes through dnsmasq.
 # XXX this is actually a good idea, particularly if you want to look for indicators of compromise.
 #log-queries
 __DNSMASQ__
@@ -289,17 +219,3 @@ sed -i 's/After=network.target/After= network.target ntp-wait.service/' /usr/lib
 
 # turn on tor, and reboot... it should work. 
 systemctl enable tor.service
-
-# ramfs grows dynamically
-# tmpfs has limited size but can use swap
-# pick your poison
-echo "tmpfs /var/log tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
-rm -R /var/log
-
-echo "tmpfs /tmp tmpfs nodev,nosuid,size=16M 0 0" >> /etc/fstab
-rm -R /tmp
-
-#shread ~/.bash_history
-#shread /home/alarm/.bash_history
-
-sync && reboot
