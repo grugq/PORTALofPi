@@ -208,6 +208,7 @@ COMMIT
 -A INPUT -p tcp -j REJECT --reject-with tcp-reset
 -A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
 -A INPUT -j REJECT --reject-with icmp-proto-unreachable
+-A OUTPUT -m conntrack --ctstate INVALID -j DROP
 COMMIT
 # Completed on Thu Jan  1 01:24:22 1970 ## truf!
 __IPTABLES__
